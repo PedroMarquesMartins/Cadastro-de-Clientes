@@ -1,0 +1,54 @@
+name: Node CI - Cadastro de Clientes
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: unigran
+          POSTGRES_DB: clientes_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+
+      - name: Create database table
+        run: |
+          psql postgresql://postgres:unigran@localhost:5432/clientes_db <<EOF
+          CREATE TABLE IF NOT EXISTS clientes (
+            id SERIAL PRIMARY KEY,
+            nome VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            idade INT NOT NULL
+          );
+          EOF
+
+      - name: Run tests
+        run: npm test
